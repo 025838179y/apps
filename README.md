@@ -1,29 +1,29 @@
-# Face Gate (Android)
+# UniversalAuth Face Unlock — PIN / Pattern customization
 
-This repository contains a standalone Android app that protects access to its own content with either:
-- Android system biometrics exposed through BiometricPrompt (face/fingerprint where supported by the device), or
-- a locally configured PIN (minimum 6 digits).
+This repository contains a patch and GitHub Actions build pipeline for the original UniversalAuth Face Unlock app (application ID `ax.nd.faceunlock`), based on upstream release commit `0c45755260538792b30a97d8775e3936e8428564`.
 
-## Important security boundary
+## Added to the original app
 
-This is an **in-app gate**. It does not replace, hook, or bypass Android's device lock screen. Root access alone does not make a regular app an Android system authenticator. To make a custom authenticator a real device unlock method, it must be implemented and trusted at the OS/ROM level (for example, as part of a custom system image with the required platform permissions and hardware-backed authentication integration).
+- Optional numeric PIN (at least 6 digits).
+- Optional 3×3 gesture pattern (at least 4 connected points).
+- Both can be enabled together alongside the original face authentication.
+- PIN and pattern are stored as salted PBKDF2-HMAC-SHA256 hashes, not plaintext.
+- Five failed attempts temporarily block the custom credential UI for 30 seconds.
+- A Magisk/SU button runs only `su -c id` to request and verify superuser authorization.
+- A settings button opens Android Accessibility settings, where the app's existing lock-screen accessibility service can be enabled.
 
-The app may report whether common root indicators are present, but it does not use root to take over system authentication.
+## Android lock-screen boundary
+
+Android does not offer an ordinary app setting that makes a third-party app the system Keyguard. This project keeps the original UniversalAuth architecture: the accessibility service displays the additional credential UI over the lock screen, and the existing Xposed/LSPosed module handles the system-unlock path. The Magisk button is only a permission check; it does not by itself install or activate the Xposed module.
 
 ## Build
 
-Open the project in Android Studio, or run:
+A push to `main`, or a manual run under **Actions → Build original Face Unlock with PIN and Pattern**, clones the pinned upstream source, applies `patches/patch_original.py`, and builds the original app's debug APK.
 
-```bash
-./gradlew assembleDebug
-```
+The output is uploaded as the workflow artifact `original-face-unlock-pin-pattern-debug`.
 
-The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`.
+The APK is debug-signed. Updating an already-installed copy of the original app requires signing with the same private release keystore that signed that installed copy; that keystore is not included in this repository and should never be committed.
 
-For a distributable release APK, configure a private signing key in your own build environment. Never commit a keystore or passwords to this repository.
+## Attribution
 
-## Compatibility
-
-- minSdk 29 (Android 10)
-- targetSdk 35
-- AndroidX BiometricPrompt; available biometric modalities depend on the device and its Android implementation.
+The upstream UniversalAuth source is distributed under the Apache License 2.0 terms described in its `LICENSE.md`. The build workflow preserves the upstream license and adds a modification notice.
