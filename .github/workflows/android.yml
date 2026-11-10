@@ -1,4 +1,4 @@
-name: Android build
+name: Build original Face Unlock with PIN and Pattern
 
 on:
   push:
@@ -11,37 +11,43 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  build-original-app:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out source
+      - name: Check out customization repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK 11
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.9'
+          java-version: '11'
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
           packages: platform-tools
 
-      - name: Install Android platform
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - name: Install Android platform and build tools
+        run: sdkmanager "platforms;android-31" "build-tools;31.0.0"
 
-      - name: Build debug APK
-        run: gradle --no-daemon assembleDebug
+      - name: Fetch original UniversalAuth source
+        run: |
+          git clone https://github.com/null-dev/UniversalAuth.git "$RUNNER_TEMP/UniversalAuth"
+          git -C "$RUNNER_TEMP/UniversalAuth" checkout 0c45755260538792b30a97d8775e3936e8428564
 
-      - name: Upload APK
+      - name: Apply PIN, pattern, Magisk and settings changes
+        run: python3 patches/patch_original.py "$RUNNER_TEMP/UniversalAuth"
+
+      - name: Build original Face Unlock APK
+        working-directory: ${{ runner.temp }}/UniversalAuth
+        run: |
+          chmod +x ./gradlew
+          ./gradlew --no-daemon :faceunlock:assembleDebug
+
+      - name: Upload modified original APK
         uses: actions/upload-artifact@v4
         with:
-          name: face-gate-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: original-face-unlock-pin-pattern-debug
+          path: ${{ runner.temp }}/UniversalAuth/faceunlock/build/outputs/apk/debug/faceunlock-debug.apk
           if-no-files-found: error
