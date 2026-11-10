@@ -1,6 +1,5 @@
 package com.example.facegate;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Typeface;
@@ -17,6 +16,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.fragment.app.FragmentActivity;
 import androidx.biometric.BiometricManager;
 import androidx.biometric.BiometricPrompt;
 import androidx.core.content.ContextCompat;
@@ -30,7 +30,7 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import android.util.Base64;
 
-public class MainActivity extends Activity {
+public class MainActivity extends FragmentActivity {
     private static final String PREFS = "face_gate_secure_prefs";
     private static final String KEY_SALT = "pin_salt";
     private static final String KEY_HASH = "pin_hash";
