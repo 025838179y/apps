@@ -806,6 +806,34 @@ if "LockscreenCredentialOverlay" not in service:
     if n != 1:
         raise SystemExit("Cannot patch LockscreenFaceAuthService.onAuthed")
     service = service.replace(
+        "val faceEnrolled = Util.isFaceUnlockEnrolled(this)",
+        "val faceEnrolled = LibManager.libsLoaded.get() && Util.isFaceUnlockEnrolled(this)",
+        1
+    )
+    old_connected = '''    override fun onServiceConnected() {
+        super.onServiceConnected()
+
+        if(!LibManager.libsLoaded.get()) {
+            // Libs not loaded, abort
+            Log.w(TAG, "Libs not loaded, disabling self...")
+            disableSelf() // This doesn't work in onCreate
+            return
+        }
+    }
+'''
+    new_connected = '''    override fun onServiceConnected() {
+        super.onServiceConnected()
+
+        if(!LibManager.libsLoaded.get() && !CredentialStore.hasAny(this)) {
+            // The face engine is unavailable and no local PIN/pattern has been configured.
+            Log.w(TAG, "Face libraries and local credentials are unavailable, disabling self...")
+            disableSelf()
+            return
+        }
+    }
+'''
+    service = service.replace(old_connected, new_connected, 1)
+    service = service.replace(
         '''    override fun onError(errId: Int, message: String) {
         handler?.post {
             textView?.text = message
