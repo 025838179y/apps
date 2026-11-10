@@ -22,4 +22,5 @@ android {
 
 dependencies {
     implementation("androidx.biometric:biometric:1.1.0")
+    implementation("androidx.fragment:fragment:1.8.5")
 }
